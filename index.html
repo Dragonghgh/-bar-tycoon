@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bar Tycoon Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Bar Tycoon Simulator</h1>
+            <div class="stats">
+                <div>Money: $<span id="money">100</span></div>
+                <div>Reputation: <span id="reputation">50</span>/100</div>
+                <div>Sobriety: <span id="sobriety">100</span>/100</div>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <div class="bar-area">
+                <div class="bar-counter"></div>
+                <div class="customers" id="customers"></div>
+                <div class="player" id="player">
+                    <div class="drink-indicator"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="action-buttons">
+                    <button id="serve-beer">Serve Beer ($5)</button>
+                    <button id="serve-cocktail">Serve Cocktail ($10)</button>
+                    <button id="serve-shot">Serve Shot ($7)</button>
+                    <button id="drink-self">Drink (-5 Sobriety)</button>
+                    <button id="upgrade-bar">Upgrade Bar ($200)</button>
+                    <button id="hire-bartender">Hire Bartender ($300)</button>
+                </div>
+                <div class="message-log" id="message-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
