@@ -7,7 +7,13 @@ const gameState = {
     hasBartender: false,
     customers: [],
     intoxicationLevel: 0,
-    drinksServed: 0
+    drinksServed: 0,
+    day: 1,
+    competitors: [
+        { name: "The Tipsy Tavern", reputation: 40, aggression: 2 },
+        { name: "Drunk Duck", reputation: 60, aggression: 1 },
+        { name: "Liquor Locker", reputation: 30, aggression: 3 }
+    ]
 };
 
 // DOM elements
@@ -73,6 +79,18 @@ function addMessage(message) {
 function spawnCustomer() {
     if (gameState.customers.length >= 3 + gameState.barLevel) return;
     
+    // Calculate spawn chance based on reputation vs competitors
+    const totalReputation = gameState.competitors.reduce((sum, comp) => sum + comp.reputation, gameState.reputation);
+    const spawnChance = gameState.reputation / totalReputation;
+    
+    if (Math.random() > spawnChance) {
+        // Customer went to competitor
+        const competitor = gameState.competitors[Math.floor(Math.random() * gameState.competitors.length)];
+        addMessage(`A customer chose ${competitor.name} over your bar!`);
+        competitor.reputation = Math.min(100, competitor.reputation + 2);
+        return;
+    }
+    
     const customerId = Date.now();
     const customerEl = document.createElement('div');
     customerEl.className = 'customer';
@@ -98,6 +116,14 @@ function spawnCustomer() {
                 removeCustomer(customerId, false);
                 gameState.reputation = Math.max(0, gameState.reputation - 5);
                 addMessage('A customer left unhappy! -5 Reputation');
+                
+                // Competitors benefit from your mistakes
+                if (Math.random() > 0.7) {
+                    const competitor = gameState.competitors[Math.floor(Math.random() * gameState.competitors.length)];
+                    competitor.reputation = Math.min(100, competitor.reputation + 3);
+                    addMessage(`${competitor.name} gained reputation from your failure!`);
+                }
+                
                 updateUI();
             }
         }
@@ -126,6 +152,14 @@ function removeCustomer(customerId, served) {
         if (gameState.drinksServed % 10 === 0) {
             gameState.reputation = Math.min(100, gameState.reputation + 10);
             addMessage('Customers are loving your bar! +10 Reputation');
+            
+            // Aggressive competitors might react
+            gameState.competitors.forEach(comp => {
+                if (comp.aggression > 2 && Math.random() > 0.7) {
+                    comp.reputation = Math.min(100, comp.reputation + 5);
+                    addMessage(`${comp.name} is stepping up their game in response!`);
+                }
+            });
         }
     }
 }
@@ -182,6 +216,12 @@ function drinkYourself() {
             gameState.sobriety = 50;
             gameState.intoxicationLevel = 0;
             
+            // Competitors take advantage
+            gameState.competitors.forEach(comp => {
+                comp.reputation = Math.min(100, comp.reputation + 5);
+            });
+            addMessage('All competitors gained reputation while you were out!');
+            
             // Remove all customers
             gameState.customers.forEach(c => {
                 if (c.timeout) clearTimeout(c.timeout);
@@ -206,6 +246,14 @@ function upgradeBar() {
     gameState.money -= 200;
     gameState.barLevel++;
     addMessage(`Bar upgraded to level ${gameState.barLevel}! Can serve more customers.`);
+    
+    // Competitors might upgrade too
+    if (Math.random() > 0.5) {
+        const competitor = gameState.competitors[Math.floor(Math.random() * gameState.competitors.length)];
+        competitor.reputation = Math.min(100, competitor.reputation + 10);
+        addMessage(`${competitor.name} also improved their bar in response!`);
+    }
+    
     updateUI();
 }
 
@@ -215,6 +263,14 @@ function hireBartender() {
     gameState.money -= 300;
     gameState.hasBartender = true;
     addMessage('Bartender hired! They\'ll automatically serve some customers.');
+    
+    // Competitors might hire staff too
+    if (Math.random() > 0.7) {
+        const competitor = gameState.competitors[Math.floor(Math.random() * gameState.competitors.length)];
+        competitor.reputation = Math.min(100, competitor.reputation + 15);
+        addMessage(`${competitor.name} hired more staff to compete with you!`);
+    }
+    
     updateUI();
     
     // Bartender auto-serves occasionally
@@ -228,6 +284,75 @@ function hireBartender() {
     }, 5000);
 }
 
+function endDay() {
+    gameState.day++;
+    
+    // Daily reputation changes
+    const playerRepChange = Math.floor((gameState.reputation - 50) / 10);
+    gameState.reputation = Math.max(0, Math.min(100, gameState.reputation + playerRepChange));
+    
+    // Competitors get daily changes too
+    gameState.competitors.forEach(comp => {
+        const compRepChange = Math.floor((comp.reputation - 50) / 10) + Math.floor(Math.random() * 5) - 2;
+        comp.reputation = Math.max(0, Math.min(100, comp.reputation + compRepChange));
+    });
+    
+    // Random events
+    if (Math.random() > 0.8) {
+        triggerRandomEvent();
+    }
+    
+    addMessage(`--- Day ${gameState.day} Summary ---`);
+    addMessage(`Your reputation changed by ${playerRepChange >= 0 ? '+' : ''}${playerRepChange}`);
+    gameState.competitors.forEach(comp => {
+        addMessage(`${comp.name} reputation: ${comp.reputation}`);
+    });
+    addMessage('-----------------------');
+    
+    updateUI();
+}
+
+function triggerRandomEvent() {
+    const events = [
+        {
+            name: "Health Inspection",
+            effect: () => {
+                const repChange = Math.floor(Math.random() * 20) - 10;
+                gameState.reputation = Math.max(0, Math.min(100, gameState.reputation + repChange));
+                addMessage(`Health inspection! ${repChange >= 0 ? 'Passed' : 'Failed'}. Reputation ${repChange >= 0 ? '+' : ''}${repChange}`);
+            }
+        },
+        {
+            name: "Competitor Promotion",
+            effect: () => {
+                const competitor = gameState.competitors[Math.floor(Math.random() * gameState.competitors.length)];
+                const repGain = 10 + Math.floor(Math.random() * 10);
+                competitor.reputation = Math.min(100, competitor.reputation + repGain);
+                addMessage(`${competitor.name} ran a successful promotion! +${repGain} reputation for them.`);
+            }
+        },
+        {
+            name: "Bar Fight",
+            effect: () => {
+                const repLoss = 5 + Math.floor(Math.random() * 10);
+                gameState.reputation = Math.max(0, gameState.reputation - repLoss);
+                addMessage(`Bar fight broke out! -${repLoss} reputation.`);
+            }
+        },
+        {
+            name: "Celebrity Visit",
+            effect: () => {
+                const repGain = 15 + Math.floor(Math.random() * 10);
+                gameState.reputation = Math.min(100, gameState.reputation + repGain);
+                addMessage(`Celebrity visited your bar! +${repGain} reputation.`);
+            }
+        }
+    ];
+    
+    const randomEvent = events[Math.floor(Math.random() * events.length)];
+    randomEvent.effect();
+}
+
 // Event listeners
 serveBeerBtn.addEventListener('click', () => serveDrink('beer'));
 serveCocktailBtn.addEventListener('click', () => serveDrink('cocktail'));
@@ -236,9 +361,11 @@ drinkSelfBtn.addEventListener('click', drinkYourself);
 upgradeBarBtn.addEventListener('click', upgradeBar);
 hireBartenderBtn.addEventListener('click', hireBartender);
 
-// Game loop
+// Game loops
 setInterval(spawnCustomer, 3000);
+setInterval(endDay, 60000); // 1 minute = 1 day
 
 // Initialize
 updateUI();
 addMessage('Welcome to Bar Tycoon Simulator! Serve drinks to earn money.');
+addMessage('Competitors: The Tipsy Tavern, Drunk Duck, and Liquor Locker');
