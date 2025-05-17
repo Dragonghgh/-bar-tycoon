@@ -168,3 +168,28 @@ button:disabled {
     0%, 100% { transform: translateX(-50%) rotate(-5deg); }
     50% { transform: translateX(-50%) rotate(5deg); }
 }
+/* Competitor info */
+.competitor-info {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #16213e;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 200px;
+}
+
+.competitor {
+    margin-bottom: 5px;
+    padding: 5px;
+    background-color: #0f3460;
+    border-radius: 3px;
+}
+
+.competitor-name {
+    font-weight: bold;
+}
+
+.competitor-rep {
+    color: #4cc9f0;
+}
